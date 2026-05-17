@@ -1,0 +1,13 @@
+services:
+  airflow:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.airflow
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      PYTHONPATH: /opt/airflow/include:/opt/airflow
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/include:/opt/airflow/include
+      - ../wd_gold:/opt/airflow/wd_gold
+      - ../.env:/opt/airflow/.env

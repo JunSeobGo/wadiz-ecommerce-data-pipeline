@@ -1,0 +1,19 @@
+name: demo-ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run sensitive string scan
+        run: python scripts/scan_sensitive_strings.py
+      - name: Compile project python files
+        run: python -m compileall airflow wd_bronze wd_silver wd_dashboard_export scripts

@@ -1,0 +1,12 @@
+project_name             = "wadiz-demo"
+region                   = "ap-northeast-2"
+data_lake_bucket_name    = "your-data-lake-bucket"
+athena_query_bucket_name = "your-athena-query-result-bucket"
+
+airflow_instance_id = "i-xxxxxxxxxxxxxxxxx"
+ecs_cluster_name    = "your-ecs-cluster"
+ecr_repository_names = ["wd-crawler"]
+
+# 기본값은 false라서 terraform plan 시 새 리소스를 만들지 않는다.
+enable_managed_log_group     = false
+enable_ecr_lifecycle_policy  = false

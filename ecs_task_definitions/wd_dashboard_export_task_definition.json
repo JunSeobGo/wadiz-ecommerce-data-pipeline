@@ -1,0 +1,33 @@
+{
+  "family": "wd-dashboard-export",
+  "taskRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "executionRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "wd-dashboard-export-container",
+      "image": "000000000000.dkr.ecr.ap-northeast-2.amazonaws.com/wd-crawler:silver-v2",
+      "cpu": 0,
+      "essential": true,
+      "command": ["python", "-m", "wd_dashboard_export.export_gold2_to_google_sheets"],
+      "environment": [
+        {"name": "AWS_REGION", "value": "ap-northeast-2"},
+        {"name": "ATHENA_DATABASE", "value": "wadiz_gold2_db"},
+        {"name": "ATHENA_OUTPUT_LOCATION", "value": "s3://wd-athena-query3/google-sheets-export/"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wd-dashboard-export",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {"cpuArchitecture": "X86_64", "operatingSystemFamily": "LINUX"}
+}

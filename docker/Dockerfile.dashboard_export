@@ -1,0 +1,8 @@
+FROM python:3.11-slim
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+WORKDIR /app
+COPY requirements-dashboard-export.txt /app/requirements-dashboard-export.txt
+RUN pip install --no-cache-dir -r /app/requirements-dashboard-export.txt
+COPY wd_dashboard_export /app/wd_dashboard_export
+CMD ["python", "-m", "wd_dashboard_export.export_gold2_to_google_sheets"]

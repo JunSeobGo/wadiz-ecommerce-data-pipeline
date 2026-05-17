@@ -1,0 +1,38 @@
+{
+  "family": "wd-silver-etl",
+  "taskRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "executionRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "wd-silver-container",
+      "image": "000000000000.dkr.ecr.ap-northeast-2.amazonaws.com/wd-crawler:silver-v2",
+      "cpu": 0,
+      "essential": true,
+      "command": ["python", "-m", "wd_silver.run_silver", "--table", "preorder", "--dt", "20260505", "--dry-run"],
+      "environment": [
+        {"name": "AWS_REGION", "value": "ap-northeast-2"},
+        {"name": "S3_BUCKET", "value": "wd-data-lake"},
+        {"name": "BRONZE_PREFIX", "value": "bronze/wadiz"},
+        {"name": "SILVER_PREFIX", "value": "silver2/wadiz"},
+        {"name": "SILVER_ERROR_PREFIX", "value": "silver_error/wadiz"},
+        {"name": "SILVER_DB", "value": "wadiz_silver2_db"},
+        {"name": "SILVER_WRITE_ERROR_ROWS", "value": "true"},
+        {"name": "SILVER_ALLOW_EMPTY", "value": "false"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wd-silver-etl",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "8192",
+  "runtimePlatform": {"cpuArchitecture": "X86_64", "operatingSystemFamily": "LINUX"}
+}

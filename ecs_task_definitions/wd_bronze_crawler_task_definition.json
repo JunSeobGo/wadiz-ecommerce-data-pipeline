@@ -1,0 +1,55 @@
+{
+  "family": "wd-bronze-crawler",
+  "taskRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "executionRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "wd-bronze-container",
+      "image": "000000000000.dkr.ecr.ap-northeast-2.amazonaws.com/wd-crawler:silver-v2",
+      "cpu": 0,
+      "essential": true,
+      "command": [
+        "python",
+        "-m",
+        "wd_bronze.run_bronze",
+        "--table",
+        "preorder",
+        "--dt",
+        "20260505"
+      ],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "ap-northeast-2"
+        },
+        {
+          "name": "S3_BUCKET",
+          "value": "wd-data-lake"
+        },
+        {
+          "name": "BRONZE_PREFIX",
+          "value": "bronze/wadiz"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wd-bronze-crawler",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "3072",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  }
+}
