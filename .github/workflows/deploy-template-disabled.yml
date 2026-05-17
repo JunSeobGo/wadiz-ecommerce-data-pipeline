@@ -1,0 +1,12 @@
+# 이 파일은 실제 배포용 템플릿입니다.
+# secrets와 IAM OIDC 설정 전에는 workflow_dispatch를 활성화하지 마세요.
+name: deploy-template-disabled
+
+on:
+  workflow_dispatch:
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "배포 템플릿입니다. 실제 AWS 계정 정보는 GitHub Secrets/OIDC로만 주입하세요."

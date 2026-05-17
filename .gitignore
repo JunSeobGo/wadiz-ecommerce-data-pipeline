@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local secrets and env files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+**/secrets/
+*service_account*.json
+*credentials*.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# Airflow local files
+airflow/logs/
+logs/
+standalone_admin_password.txt
+airflow.db
+webserver_config.py
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Data artifacts that should not be committed by accident
+*.parquet
+*.avro
+*.orc
+*.gz
+*.zip
+*.tar
+*.tar.gz
+
+# Demo CSV data is intentionally committed only under this folder.
+!dashboard/streamlit_seller_demo/data/*.csv
