@@ -2,18 +2,68 @@ name: demo-ci
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
 
 jobs:
-  validate:
+  lint:
+    name: Ruff 린트
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Run sensitive string scan
+          cache: pip
+          cache-dependency-path: requirements-*.txt
+      - name: 개발 도구 설치
+        run: pip install -r requirements-dev.txt
+      - name: Ruff 린트 검사
+        run: ruff check .
+
+  test:
+    name: 단위 테스트
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-*.txt
+      - name: 런타임 + 개발 의존성 설치
+        run: |
+          pip install -r requirements-silver.txt
+          pip install -r requirements-dev.txt
+      - name: pytest 실행 (airflow 미설치 → DAG import 테스트는 자동 skip)
+        run: pytest
+
+  dag-import:
+    name: Airflow DAG import 검증
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-*.txt
+      - name: Airflow + 개발 의존성 설치
+        run: |
+          pip install -r requirements-airflow.txt
+          pip install -r requirements-dev.txt
+      - name: DAG import 오류 검사
+        run: pytest tests/test_dag_import.py
+
+  security:
+    name: 민감정보 스캔 + 컴파일
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 민감정보 스캔
         run: python scripts/scan_sensitive_strings.py
-      - name: Compile project python files
+      - name: 파이썬 컴파일 검사
         run: python -m compileall airflow wd_bronze wd_silver wd_dashboard_export scripts
