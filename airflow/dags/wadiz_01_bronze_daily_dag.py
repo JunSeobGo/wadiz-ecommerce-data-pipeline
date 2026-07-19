@@ -3,7 +3,6 @@ from __future__ import annotations
 import pendulum
 from airflow.decorators import dag, task
 from airflow.operators.python import get_current_context
-
 from wadiz_airflow.bronze import run_bronze_table
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
 from wadiz_airflow.dates import compact_dt_from_context
