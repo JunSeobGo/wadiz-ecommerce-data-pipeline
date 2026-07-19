@@ -7,6 +7,24 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+# Python packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / coverage 리포트
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
 # Virtual environments
 .venv/
 venv/
@@ -39,6 +57,9 @@ logs/
 standalone_admin_password.txt
 airflow.db
 webserver_config.py
+
+# Streamlit local secrets (config.toml은 커밋, secrets는 제외)
+.streamlit/secrets.toml
 
 # OS / IDE
 .DS_Store
