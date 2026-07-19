@@ -4,7 +4,6 @@ from wadiz_airflow.athena import repair_table
 from wadiz_airflow.config import get_config
 from wadiz_airflow.ecs import run_fargate_task_and_wait
 
-
 SILVER_TABLES = ['preorder', 'comments', 'supporter', 'fundings', 'wishes', 'user_info']
 
 

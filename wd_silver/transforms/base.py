@@ -5,7 +5,7 @@ from typing import Any, Iterable
 
 import pandas as pd
 
-from wd_silver.date_utils import now_kst_timestamp, normalize_dt, to_timestamp
+from wd_silver.date_utils import normalize_dt, now_kst_timestamp, to_timestamp
 from wd_silver.null_rules import apply_null_rules
 from wd_silver.schemas import TableSchema
 

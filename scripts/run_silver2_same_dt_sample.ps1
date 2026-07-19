@@ -17,8 +17,8 @@ $ErrorPrefix = "silver_error/wadiz"
 $Cluster = "wd-crawler-cluster"
 $TaskDefinition = "wd-silver-etl"
 $ContainerName = "wd-silver-container"
-$Subnets = "subnet-0abb7263b7ec6580f,subnet-07179740222a12ea2"
-$SecurityGroups = "sg-0c057b9568be47eb7"
+$Subnets = "subnet-xxxxxxxx,subnet-yyyyyyyy"
+$SecurityGroups = "sg-xxxxxxxx"
 
 $DtClean = $Dt.Replace("-", "")
 $DtDashed = "$($DtClean.Substring(0,4))-$($DtClean.Substring(4,2))-$($DtClean.Substring(6,2))"

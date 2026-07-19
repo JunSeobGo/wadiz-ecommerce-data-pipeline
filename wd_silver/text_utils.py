@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import re
+
 import pandas as pd
 
 HTML_TAG_RE = re.compile(r'<[^>]+>')

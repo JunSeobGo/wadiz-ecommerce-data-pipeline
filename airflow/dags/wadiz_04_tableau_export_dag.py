@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pendulum
 from airflow.decorators import dag, task
-
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
 from wadiz_airflow.config import get_config
 from wadiz_airflow.ecs import run_fargate_task_and_wait

@@ -1,0 +1,25 @@
+# 프로젝트 도구 설정 (ruff 린트 + pytest)
+# 패키징용이 아니라, 코드 품질 도구 설정을 한곳에 모으기 위한 파일입니다.
+
+[tool.ruff]
+# 실제 런타임은 Docker 기준 Python 3.11 이므로 그에 맞춥니다.
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+# 기본(E4/E7/E9/F)에 W(경고)와 I(import 정렬)를 추가합니다.
+# 포매터(ruff format)는 기존 코드 스타일을 대규모로 바꾸므로 CI에 포함하지 않습니다.
+select = ["E4", "E7", "E9", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts는 sys.path 조정 후 import하는 진입점 스크립트라 E402(최상단 import 아님)를 허용합니다.
+"scripts/*" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    # 외부 라이브러리(airflow, pandas 등)의 Deprecation 경고는 테스트 신호를 가리므로 무시합니다.
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
