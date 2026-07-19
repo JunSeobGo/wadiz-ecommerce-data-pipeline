@@ -1,0 +1,2 @@
+# 빈 이슈 생성을 막고, 항상 템플릿을 거치도록 함
+blank_issues_enabled: false
