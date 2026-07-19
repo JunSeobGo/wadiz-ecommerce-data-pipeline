@@ -7,7 +7,12 @@ import pandas as pd
 from wd_silver.date_utils import to_timestamp
 from wd_silver.pii import hash_series
 from wd_silver.schemas import get_schema
-from wd_silver.transforms.base import coalesce_columns, enforce_schema, extract_user_id_from_source_key, normalize_columns
+from wd_silver.transforms.base import (
+    coalesce_columns,
+    enforce_schema,
+    extract_user_id_from_source_key,
+    normalize_columns,
+)
 
 
 def _amount_tier(amount: pd.Series) -> pd.Series:

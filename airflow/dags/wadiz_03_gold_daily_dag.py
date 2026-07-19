@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pendulum
 from airflow.decorators import dag, task
-
 from wadiz_airflow.athena import run_sql_file_statements
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
 from wadiz_airflow.gold import recreate_gold_table_from_sql
