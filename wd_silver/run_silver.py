@@ -10,7 +10,12 @@ from wd_silver.config import get_config
 from wd_silver.date_utils import normalize_dt
 from wd_silver.io.reader import read_bronze_table_from_s3
 from wd_silver.io.writer import write_error_rows, write_parquet_partition
-from wd_silver.quality.validators import log_quality_metrics, split_valid_and_error_rows
+from wd_silver.quality.validators import (
+    error_rate,
+    exceeds_error_threshold,
+    log_quality_metrics,
+    split_valid_and_error_rows,
+)
 from wd_silver.schemas import get_schema
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -31,6 +36,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--allow-empty', action='store_true')
     parser.add_argument('--no-error-rows', action='store_true')
+    parser.add_argument(
+        '--max-error-rate',
+        type=float,
+        default=None,
+        help='error 행 허용 비율(0~1). 미지정 시 config(SILVER_MAX_ERROR_RATE) 사용. 음수면 검사 비활성화',
+    )
     return parser.parse_args(argv)
 
 
@@ -51,9 +62,23 @@ def main(argv: list[str] | None = None) -> int:
     metrics = log_quality_metrics(silver_df, schema)
     validation = split_valid_and_error_rows(silver_df, schema)
 
+    threshold = args.max_error_rate if args.max_error_rate is not None else cfg.max_error_rate
+    rate = error_rate(validation.metrics)
+    logger.info('Error rate check. table=%s dt=%s error_rate=%.4f threshold=%.4f', table, dt, rate, threshold)
+
     if args.dry_run:
         logger.info('Dry run completed. table=%s dt=%s metrics=%s validation=%s', table, dt, json.dumps(metrics, ensure_ascii=False, default=str), json.dumps(validation.metrics, ensure_ascii=False, default=str))
         return 0
+
+    if exceeds_error_threshold(validation.metrics, threshold):
+        logger.error(
+            'Error rate %.2f%% exceeds threshold %.2f%%. Valid partition NOT written. table=%s dt=%s',
+            rate * 100, threshold * 100, table, dt,
+        )
+        # 디버깅을 위해 error 행은 남기되, 정상 파티션은 쓰지 않아 Gold가 오염 데이터를 읽지 않게 한다.
+        if cfg.write_error_rows and not args.no_error_rows:
+            write_error_rows(error_df=validation.error_df, bucket=cfg.s3_bucket, error_prefix=cfg.silver_error_prefix, table=table, dt=dt)
+        return 3
 
     output_uri = write_parquet_partition(df=validation.valid_df, bucket=cfg.s3_bucket, prefix=cfg.silver_prefix, table=table, dt=dt, delete_existing=True)
     error_uri = None

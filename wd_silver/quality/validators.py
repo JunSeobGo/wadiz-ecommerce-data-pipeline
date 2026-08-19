@@ -45,6 +45,22 @@ def split_valid_and_error_rows(df: pd.DataFrame, schema: TableSchema) -> Validat
     return ValidationResult(valid_df, error_df, metrics)
 
 
+def error_rate(metrics: dict) -> float:
+    """검증 metrics에서 error 행 비율(0.0~1.0)을 계산한다."""
+    total = int(metrics.get('input_rows', 0) or 0)
+    errors = int(metrics.get('error_rows', 0) or 0)
+    if total <= 0:
+        return 0.0
+    return errors / total
+
+
+def exceeds_error_threshold(metrics: dict, max_rate: float) -> bool:
+    """error 비율이 허용치를 초과하면 True. 허용치가 음수면 검사를 끈 것으로 본다."""
+    if max_rate < 0:
+        return False
+    return error_rate(metrics) > max_rate
+
+
 def log_quality_metrics(df: pd.DataFrame, schema: TableSchema) -> dict:
     duplicate_count = None
     if schema.dedup_keys and all(k in df.columns for k in schema.dedup_keys):
