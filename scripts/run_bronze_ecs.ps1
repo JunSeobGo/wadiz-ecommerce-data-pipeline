@@ -7,6 +7,7 @@ $Region = "ap-northeast-2"
 $Cluster = "wd-crawler-cluster"
 $TaskDefinition = "wd-bronze-crawler"
 $ContainerName = "wd-bronze-container"
+# 데모용 placeholder 값 (연결된 운영 계정 없음)
 $Subnets = "subnet-xxxxxxxx,subnet-yyyyyyyy"
 $SecurityGroups = "sg-xxxxxxxx"
 $DtClean = $Dt.Replace("-", "")
