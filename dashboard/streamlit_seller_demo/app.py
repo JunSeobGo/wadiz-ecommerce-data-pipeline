@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import html
 from pathlib import Path
 from typing import Any
-import html
 
 import numpy as np
 import pandas as pd
