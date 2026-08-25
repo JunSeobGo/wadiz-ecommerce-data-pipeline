@@ -7,6 +7,7 @@ import pendulum
 from airflow.decorators import dag, task
 from wadiz_airflow.athena import run_sql_file_statements
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
+from wadiz_airflow.datasets import GOLD_READY, SILVER_READY
 from wadiz_airflow.gold import recreate_gold_table_from_sql
 
 DEFAULT_ARGS = {
@@ -31,7 +32,7 @@ GOLD_TABLES = [
     dag_id='wadiz_03_gold_daily_dag',
     description='Gold KPI CTAS 재생성 전용 DAG. Streamlit/Tableau가 조회할 집계 테이블을 만듭니다.',
     start_date=pendulum.datetime(2026, 5, 1, tz='Asia/Seoul'),
-    schedule='0 5 * * *',
+    schedule=[SILVER_READY],
     catchup=False,
     max_active_runs=1,
     default_args=DEFAULT_ARGS,
@@ -66,12 +67,17 @@ def wadiz_03_gold_daily_dag():
         print('[DEBUG] Tableau/Google Sheets용 public view 생성 시작')
         return run_sql_file_statements(sql_dir / 'create_public_views.sql')
 
+    @task(task_id='t95_signal_gold_ready', outlets=[GOLD_READY])
+    def signal_gold_ready():
+        # Gold 재생성 완료 신호. 하위 Export DAG을 트리거한다.
+        print('[DEBUG] Gold 완료 신호 발행')
+
     validated = validate_gold_sql_files()
     gold_tasks = [
         refresh_gold_table.override(task_id=f't10_refresh_{table}')(table, sql_file)
         for table, sql_file in GOLD_TABLES
     ]
-    validated >> gold_tasks >> create_public_views()
+    validated >> gold_tasks >> create_public_views() >> signal_gold_ready()
 
 
 wadiz_03_gold_daily_dag()
