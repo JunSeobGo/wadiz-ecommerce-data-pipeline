@@ -38,9 +38,11 @@ class WadizConfig:
     ecs_task_family_bronze: str
     ecs_task_family_silver: str
     ecs_task_family_dashboard_export: str
+    ecs_task_family_dbt: str
     ecs_container_bronze: str
     ecs_container_silver: str
     ecs_container_dashboard_export: str
+    ecs_container_dbt: str
 
 
 def get_config() -> WadizConfig:
@@ -65,7 +67,9 @@ def get_config() -> WadizConfig:
         ecs_task_family_bronze=env('ECS_TASK_FAMILY_BRONZE', 'wd-bronze-crawler'),
         ecs_task_family_silver=env('ECS_TASK_FAMILY_SILVER', 'wd-silver-etl'),
         ecs_task_family_dashboard_export=env('ECS_TASK_FAMILY_DASHBOARD_EXPORT', 'wd-dashboard-export'),
+        ecs_task_family_dbt=env('ECS_TASK_FAMILY_DBT', 'wd-dbt-gold'),
         ecs_container_bronze=env('ECS_CONTAINER_BRONZE', 'wd-bronze-container'),
         ecs_container_silver=env('ECS_CONTAINER_SILVER', 'wd-silver-container'),
         ecs_container_dashboard_export=env('ECS_CONTAINER_DASHBOARD_EXPORT', 'wd-dashboard-export-container'),
+        ecs_container_dbt=env('ECS_CONTAINER_DBT', 'wd-dbt-container'),
     )

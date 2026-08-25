@@ -1,0 +1,22 @@
+name: 'wadiz_gold'
+version: '1.0.0'
+config-version: 2
+
+# profiles.yml의 'wadiz' 프로필을 사용한다(profiles.yml.example 참고).
+profile: 'wadiz'
+
+model-paths: ["models"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  wadiz_gold:
+    # Gold Mart: Athena 테이블로 물리화(기존 CTAS 동작 그대로 이전)
+    marts:
+      +materialized: table
+    # 대시보드/Export가 조회하는 공개 뷰
+    public:
+      +materialized: view
