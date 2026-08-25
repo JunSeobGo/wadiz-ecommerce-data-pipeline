@@ -1,0 +1,36 @@
+{
+  "family": "wd-dbt-gold",
+  "taskRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "executionRoleArn": "arn:aws:iam::000000000000:role/ECS-role-wd-crawler",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "wd-dbt-container",
+      "image": "000000000000.dkr.ecr.ap-northeast-2.amazonaws.com/wd-crawler:dbt-v1",
+      "cpu": 0,
+      "essential": true,
+      "command": ["dbt", "build", "--project-dir", "/app/dbt_wadiz", "--profiles-dir", "/app/dbt_wadiz"],
+      "environment": [
+        {"name": "AWS_REGION", "value": "ap-northeast-2"},
+        {"name": "WADIZ_SILVER_DB", "value": "wadiz_silver2_db"},
+        {"name": "WADIZ_GOLD_DB", "value": "wadiz_gold2_db"},
+        {"name": "DBT_ATHENA_S3_STAGING_DIR", "value": "s3://wd-athena-query3/athena-results/dbt/"},
+        {"name": "DBT_ATHENA_S3_DATA_DIR", "value": "s3://wd-data-lake/gold2/wadiz/dbt/"},
+        {"name": "DBT_ATHENA_WORKGROUP", "value": "primary"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wd-dbt-gold",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "4096",
+  "runtimePlatform": {"cpuArchitecture": "X86_64", "operatingSystemFamily": "LINUX"}
+}
