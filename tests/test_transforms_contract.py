@@ -37,9 +37,9 @@ def test_pii_raw_user_id_removed(table):
     hash_col = HASH_COLUMN[table]
     # 해시는 생성되고
     assert out[hash_col].notna().all()
-    # 원본 user id 문자열은 출력 어디에도 없어야 한다
-    joined = out.astype(str).agg(" ".join, axis=1)
-    assert not joined.str.contains(RAW_USER_ID).any()
+    # 원본 user id 문자열은 출력 어디에도 없어야 한다(모든 셀을 안전하게 문자열화해 검사)
+    flat = out.astype(str).to_numpy().ravel()
+    assert not any(RAW_USER_ID in str(cell) for cell in flat)
 
 
 @pytest.mark.parametrize("table", list(HASH_COLUMN))

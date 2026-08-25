@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import pendulum
 from airflow.decorators import dag, task
+from airflow.models import Variable
 from airflow.operators.python import get_current_context
 from wadiz_airflow.bronze import run_bronze_table
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
+from wadiz_airflow.datasets import BRONZE_READY, PROCESSING_DT_VAR
 from wadiz_airflow.dates import compact_dt_from_context
 
 DEFAULT_ARGS = {
@@ -65,6 +67,13 @@ def wadiz_01_bronze_daily_dag():
         print(f'[DEBUG] user_info 수집 시작. dt={dt}')
         return run_bronze_table('user_info', dt)
 
+    @task(task_id='t90_signal_bronze_ready', outlets=[BRONZE_READY])
+    def signal_bronze_ready(dt: str):
+        # 모든 Bronze 수집 완료 신호(BRONZE_READY 발행 → Silver DAG 트리거).
+        # 하위가 같은 dt로 처리하도록 Variable에 dt를 기록한다.
+        Variable.set(PROCESSING_DT_VAR, dt)
+        print(f'[DEBUG] Bronze 완료 신호 발행. dt={dt}')
+
     dt = resolve_processing_date()
 
     # campaign 목록이 있어야 comments/supporter를 안정적으로 수집할 수 있다.
@@ -74,7 +83,13 @@ def wadiz_01_bronze_daily_dag():
     comments = bronze_comments(dt)
     supporter = bronze_supporter(dt)
     preorder >> [comments, supporter]
-    supporter >> [bronze_fundings(dt), bronze_wishes(dt), bronze_user_info(dt)]
+    fundings = bronze_fundings(dt)
+    wishes = bronze_wishes(dt)
+    user_info = bronze_user_info(dt)
+    supporter >> [fundings, wishes, user_info]
+
+    # 모든 Bronze 테이블 완료 후에만 준비 완료 신호를 발행한다.
+    [comments, fundings, wishes, user_info] >> signal_bronze_ready(dt)
 
 
 wadiz_01_bronze_daily_dag()

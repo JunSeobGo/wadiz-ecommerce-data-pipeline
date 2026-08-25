@@ -28,7 +28,8 @@ def test_hash_series_matches_elementwise():
     series = pd.Series(["u1", "u1", None, ""])
     hashed = hash_series(series, salt="a")
     assert hashed[0] == hashed[1]
-    assert hashed[2] is None
-    assert hashed[3] is None
+    # pandas 버전에 따라 None 또는 NaN이 될 수 있어 pd.isna로 검사
+    assert pd.isna(hashed[2])
+    assert pd.isna(hashed[3])
     # salt가 다르면 값이 달라진다
     assert hashed[0] != hash_series(series, salt="b")[0]
