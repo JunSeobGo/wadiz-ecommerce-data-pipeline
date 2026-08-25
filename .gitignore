@@ -78,3 +78,10 @@ Thumbs.db
 
 # Demo CSV data is intentionally committed only under this folder.
 !dashboard/streamlit_seller_demo/data/*.csv
+
+# dbt (profiles.yml.example만 커밋, 나머지 산출물은 제외)
+dbt_wadiz/profiles.yml
+dbt_wadiz/target/
+dbt_wadiz/dbt_packages/
+dbt_wadiz/logs/
+dbt_wadiz/.user.yml

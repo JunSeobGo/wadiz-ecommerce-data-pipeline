@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
 import pendulum
 from airflow.decorators import dag, task
-from wadiz_airflow.athena import run_sql_file_statements
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
-from wadiz_airflow.gold import recreate_gold_table_from_sql
+from wadiz_airflow.config import get_config
+from wadiz_airflow.datasets import GOLD_READY, SILVER_READY
+from wadiz_airflow.ecs import run_fargate_task_and_wait
 
 DEFAULT_ARGS = {
     'owner': 'wadiz-data',
@@ -17,61 +15,45 @@ DEFAULT_ARGS = {
     'on_success_callback': log_task_success,
 }
 
-GOLD_TABLES = [
-    ('campaign_kpi', 'create_campaign_kpi_v2.sql'),
-    ('campaign_daily_kpi', 'create_campaign_daily_kpi_v2.sql'),
-    ('campaign_conversion_kpi', 'create_campaign_conversion_kpi_v2.sql'),
-    ('comment_nlp_kpi', 'create_comment_nlp_kpi_v2.sql'),
-    ('campaign_response_performance', 'create_campaign_response_performance_v2.sql'),
-    ('campaign_category_benchmark', 'create_campaign_category_benchmark_v2.sql'),
-]
-
 
 @dag(
     dag_id='wadiz_03_gold_daily_dag',
-    description='Gold KPI CTAS 재생성 전용 DAG. Streamlit/Tableau가 조회할 집계 테이블을 만듭니다.',
+    description='Gold 모델링 DAG. dbt-athena(ECS)로 Gold Mart 생성 + 데이터 테스트를 함께 수행합니다.',
     start_date=pendulum.datetime(2026, 5, 1, tz='Asia/Seoul'),
-    schedule='0 5 * * *',
+    schedule=[SILVER_READY],
     catchup=False,
     max_active_runs=1,
     default_args=DEFAULT_ARGS,
-    tags=['wadiz', 'gold', 'daily'],
+    tags=['wadiz', 'gold', 'dbt'],
 )
 def wadiz_03_gold_daily_dag():
-    sql_dir = Path(os.getenv('WADIZ_GOLD_SQL_DIR', '/home/ec2-user/airflow/include/wd_gold/sql'))
+    @task(task_id='t10_dbt_build')
+    def dbt_build():
+        # Airflow는 실행 시점만 관리하고, 모델 의존성(ref)과 품질 검증(test)은 dbt가 담당한다.
+        # dbt build = dbt run + dbt test (모델 생성 후 테스트 통과까지 한 번에).
+        cfg = get_config()
+        print('[DEBUG] dbt build (Gold 모델 + 테스트) ECS task 실행 시작')
+        return run_fargate_task_and_wait(
+            task_definition=cfg.ecs_task_family_dbt,
+            container_name=cfg.ecs_container_dbt,
+            command='dbt build --project-dir /app/dbt_wadiz --profiles-dir /app/dbt_wadiz',
+            environment={
+                'AWS_REGION': cfg.aws_region,
+                'WADIZ_SILVER_DB': cfg.silver_db,
+                'WADIZ_GOLD_DB': cfg.gold_db,
+                'DBT_ATHENA_S3_STAGING_DIR': f's3://{cfg.athena_query_result_bucket}/{cfg.athena_query_result_prefix.strip("/")}/dbt/',
+                'DBT_ATHENA_S3_DATA_DIR': f's3://{cfg.s3_bucket}/{cfg.gold_prefix.strip("/")}/dbt/',
+                'DBT_ATHENA_WORKGROUP': cfg.athena_workgroup,
+            },
+            timeout_seconds=3600,
+        )
 
-    @task(task_id='t00_validate_gold_sql_files')
-    def validate_gold_sql_files():
-        missing = []
-        for _, sql_file in GOLD_TABLES:
-            path = sql_dir / sql_file
-            if not path.exists():
-                missing.append(str(path))
-        public_view = sql_dir / 'create_public_views.sql'
-        if not public_view.exists():
-            missing.append(str(public_view))
-        if missing:
-            raise FileNotFoundError('Gold SQL 파일 누락:\n' + '\n'.join(missing))
-        print(f'[DEBUG] Gold SQL 파일 검증 완료. sql_dir={sql_dir}')
-        return str(sql_dir)
+    @task(task_id='t95_signal_gold_ready', outlets=[GOLD_READY])
+    def signal_gold_ready():
+        # Gold 생성 완료 신호(GOLD_READY 발행 → Export DAG 트리거).
+        print('[DEBUG] Gold 완료 신호 발행')
 
-    @task
-    def refresh_gold_table(table_name: str, sql_file: str):
-        sql_path = sql_dir / sql_file
-        print(f'[DEBUG] Gold CTAS 시작. table={table_name}, sql={sql_path}')
-        return recreate_gold_table_from_sql(table_name, sql_path)
-
-    @task(task_id='t90_create_public_views')
-    def create_public_views():
-        print('[DEBUG] Tableau/Google Sheets용 public view 생성 시작')
-        return run_sql_file_statements(sql_dir / 'create_public_views.sql')
-
-    validated = validate_gold_sql_files()
-    gold_tasks = [
-        refresh_gold_table.override(task_id=f't10_refresh_{table}')(table, sql_file)
-        for table, sql_file in GOLD_TABLES
-    ]
-    validated >> gold_tasks >> create_public_views()
+    dbt_build() >> signal_gold_ready()
 
 
 wadiz_03_gold_daily_dag()

@@ -67,3 +67,20 @@ jobs:
         run: python scripts/scan_sensitive_strings.py
       - name: 파이썬 컴파일 검사
         run: python -m compileall airflow wd_bronze wd_silver wd_dashboard_export scripts
+
+  dbt-parse:
+    name: dbt 모델 파싱 검증
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-*.txt
+      - name: dbt 설치
+        run: pip install -r requirements-dbt.txt
+      - name: profiles 준비 (값은 env_var 기본값 사용)
+        run: cp dbt_wadiz/profiles.yml.example dbt_wadiz/profiles.yml
+      - name: dbt parse (source/ref 의존성 및 모델 구조 검증)
+        run: dbt parse --project-dir dbt_wadiz --profiles-dir dbt_wadiz

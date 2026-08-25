@@ -17,6 +17,7 @@ $ErrorPrefix = "silver_error/wadiz"
 $Cluster = "wd-crawler-cluster"
 $TaskDefinition = "wd-silver-etl"
 $ContainerName = "wd-silver-container"
+# 데모용 placeholder 값 (연결된 운영 계정 없음)
 $Subnets = "subnet-xxxxxxxx,subnet-yyyyyyyy"
 $SecurityGroups = "sg-xxxxxxxx"
 

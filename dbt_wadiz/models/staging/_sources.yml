@@ -1,0 +1,16 @@
+version: 2
+
+# Silver 계층(ECS/Pandas ETL 결과)을 dbt source로 선언한다.
+# Gold 모델은 이 source를 {{ source('wadiz_silver', '<table>') }} 로 참조한다.
+sources:
+  - name: wadiz_silver
+    database: awsdatacatalog
+    schema: "{{ env_var('WADIZ_SILVER_DB', 'wadiz_silver2_db') }}"
+    description: "Silver Parquet 테이블 (flatten/타입정리/PII/dedup 완료)"
+    tables:
+      - name: preorder
+      - name: comments
+      - name: supporter
+      - name: fundings
+      - name: wishes
+      - name: user_info

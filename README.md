@@ -31,9 +31,11 @@ ECS Fargate Silver ETL
 ↓
 S3 Silver Parquet
 ↓
-Athena Gold CTAS
+Athena Silver Tables
 ↓
-S3 Gold Parquet
+dbt-athena on ECS Fargate (Gold Modeling + Test)
+↓
+S3 / Athena Gold
 ↓
 Streamlit Seller Dashboard
 
@@ -59,7 +61,8 @@ airflow/dags/                         Airflow DAG. Bronze, Silver, Gold, Export�
 airflow/include/wadiz_airflow/         Airflow 공통 실행 유틸
 wd_bronze/                             Bronze Raw JSON 수집 코드
 wd_silver/                             Silver Parquet 정제 코드
-wd_gold/sql/                           Athena Gold CTAS SQL
+dbt_wadiz/                             Gold 모델링 dbt 프로젝트 (dbt-athena, source/ref/test)
+wd_gold/sql/                           (구) Athena Gold CTAS SQL. dbt 이전 전 버전 참고용
 wd_dashboard_export/                   Gold public view → Google Sheets export
 dashboard/streamlit_seller_demo/       fake CSV 기반 판매자용 Streamlit 데모 대시보드(실제로는 S3 -> Streamlit)
 infra/terraform/                       기존 EC2 기반 IaC 시작 코드
@@ -71,14 +74,14 @@ scripts/                               실행/검증 스크립트
 
 기존의 단일 daily DAG는 실패 지점 파악이 어려워서 Medallion 계층별로 분리했습니다.
 
-| DAG | 스케줄 | 역할 |
-|---|---:|---|
-| `wadiz_01_bronze_daily_dag` | 02:00 | 원천 응답을 Bronze Raw JSON으로 저장 |
-| `wadiz_02_silver_daily_dag` | 03:30 | JSON flatten, 타입 정리, 중복 제거, PII 처리 |
-| `wadiz_03_gold_daily_dag` | 05:00 | Athena CTAS로 Gold KPI 테이블 생성 |
-| `wadiz_04_tableau_export_dag` | 06:30 | Gold public view를 Google Sheets로 export |
+| DAG | 트리거 | 역할 |
+|---|---|---|
+| `wadiz_01_bronze_daily_dag` | 매일 02:00 (cron) | 원천 응답을 Bronze Raw JSON으로 저장 |
+| `wadiz_02_silver_daily_dag` | Bronze 완료 시 (Dataset) | JSON flatten, 타입 정리, 중복 제거, PII 처리 |
+| `wadiz_03_gold_daily_dag` | Silver 완료 시 (Dataset) | dbt-athena(ECS)로 Gold Mart 생성 + 데이터 테스트 |
+| `wadiz_04_tableau_export_dag` | Gold 완료 시 (Dataset) | Gold public view를 Google Sheets로 export |
 
-스케줄은 전일 마감 기준의 안정적인 오전 리포팅을 목표로 설계했습니다.
+Bronze만 시각(02:00)으로 시작하고, 이후 단계는 Airflow Dataset(데이터 인지 스케줄링)으로 연결했습니다. 상위 단계가 실제로 완료됐을 때만 하위 단계가 실행되므로, 시간차 스케줄에서 발생하던 "상위 실패에도 하위가 빈/과거 데이터로 실행되는" 문제를 구조적으로 제거했습니다. 처리 기준일(dt)은 Dataset 이벤트 extra로 전달해 전 단계가 동일한 날짜를 처리합니다.
 
 ## 6. Streamlit 데모 실행
 

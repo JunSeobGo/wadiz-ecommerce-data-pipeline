@@ -11,6 +11,16 @@ def env(name: str, default: str | None = None, required: bool = False) -> str:
     return str(value or '')
 
 
+def env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == '':
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
 @dataclass(frozen=True)
 class SilverConfig:
     aws_region: str
@@ -21,6 +31,8 @@ class SilverConfig:
     hash_salt: str
     allow_empty: bool
     write_error_rows: bool
+    # error 행 비율이 이 값을 넘으면 Silver를 실패시켜 오염 데이터가 Gold로 넘어가지 않게 한다.
+    max_error_rate: float
 
 
 def get_config() -> SilverConfig:
@@ -33,4 +45,5 @@ def get_config() -> SilverConfig:
         hash_salt=env('SILVER_HASH_SALT', ''),
         allow_empty=env('SILVER_ALLOW_EMPTY', 'false').lower() == 'true',
         write_error_rows=env('SILVER_WRITE_ERROR_ROWS', 'true').lower() == 'true',
+        max_error_rate=env_float('SILVER_MAX_ERROR_RATE', 0.5),
     )

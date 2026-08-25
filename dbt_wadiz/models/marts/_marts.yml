@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: campaign_kpi
+    description: "캠페인 단위 핵심 KPI 허브. 캠페인당 최신 스냅샷 1행."
+    columns:
+      - name: campaign_id
+        description: "캠페인 ID (캠페인당 유일)"
+        data_tests:
+          - not_null
+          - unique
+
+  - name: campaign_daily_kpi
+    description: "캠페인 일자별 KPI 및 전일 대비 증감."
+    columns:
+      - name: campaign_id
+        data_tests:
+          - not_null
+      - name: dt
+        data_tests:
+          - not_null
+
+  - name: campaign_conversion_kpi
+    description: "관심→참여→구매 전환 KPI."
+    columns:
+      - name: campaign_id
+        data_tests:
+          - not_null
+
+  - name: comment_nlp_kpi
+    description: "댓글 키워드 그룹별 감성 KPI."
+    columns:
+      - name: campaign_id
+        data_tests:
+          - not_null
+      - name: keyword_group
+        data_tests:
+          - not_null
+
+  - name: campaign_response_performance
+    description: "메이커 응답 성과(질문 대비 답변율)."
+    columns:
+      - name: campaign_id
+        data_tests:
+          - not_null
+
+  - name: campaign_category_benchmark
+    description: "동일 카테고리 평균 대비 성과 비교."
+    columns:
+      - name: campaign_id
+        data_tests:
+          - not_null
+      - name: category_name
+        data_tests:
+          - not_null

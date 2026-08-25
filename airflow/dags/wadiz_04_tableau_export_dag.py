@@ -4,6 +4,7 @@ import pendulum
 from airflow.decorators import dag, task
 from wadiz_airflow.callbacks import log_task_failure, log_task_success
 from wadiz_airflow.config import get_config
+from wadiz_airflow.datasets import GOLD_READY
 from wadiz_airflow.ecs import run_fargate_task_and_wait
 
 DEFAULT_ARGS = {
@@ -19,7 +20,7 @@ DEFAULT_ARGS = {
     dag_id='wadiz_04_tableau_export_dag',
     description='Gold public view를 Google Sheets로 내보내 Tableau 플랫폼 대시보드에서 사용합니다.',
     start_date=pendulum.datetime(2026, 5, 1, tz='Asia/Seoul'),
-    schedule='30 6 * * *',
+    schedule=[GOLD_READY],
     catchup=False,
     max_active_runs=1,
     default_args=DEFAULT_ARGS,
