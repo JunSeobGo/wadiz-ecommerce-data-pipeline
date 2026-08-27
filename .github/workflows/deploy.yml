@@ -1,0 +1,72 @@
+# ECR 이미지 빌드/푸시 + ECS task definition 갱신 (CD).
+#
+# 실제 AWS 배포용 워크플로우입니다. 자동 실행하지 않고 수동(workflow_dispatch)으로만 돕니다.
+# 활성화 조건:
+#   - GitHub OIDC로 assume할 배포 역할 ARN을 secrets.AWS_DEPLOY_ROLE_ARN 에 설정
+#   - 해당 역할에 iam_policies/github_oidc_deploy_role_policy_template.json 권한 부여
+#   - ECR repo(wd-crawler), ECS 클러스터/task 역할이 존재
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "이미지 태그(미지정 시 git sha 사용)"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write   # OIDC 토큰 발급(장기 액세스키 미사용)
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: wd-crawler
+
+jobs:
+  build-and-deploy:
+    name: 빌드/푸시 + ECS task 갱신
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 이미지 태그 결정
+        id: vars
+        run: |
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::12}"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: AWS 자격증명(OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: ECR 로그인
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ETL 이미지 빌드/푸시 (bronze/silver/export 공용)
+        run: |
+          IMG="${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:silver-${{ steps.vars.outputs.tag }}"
+          docker build -f docker/Dockerfile.silver -t "$IMG" .
+          docker push "$IMG"
+          echo "ETL_IMAGE=$IMG" >> "$GITHUB_ENV"
+
+      - name: dbt 이미지 빌드/푸시
+        run: |
+          IMG="${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:dbt-${{ steps.vars.outputs.tag }}"
+          docker build -f docker/Dockerfile.dbt -t "$IMG" .
+          docker push "$IMG"
+          echo "DBT_IMAGE=$IMG" >> "$GITHUB_ENV"
+
+      - name: boto3 설치
+        run: pip install boto3
+
+      - name: ECS task definition 새 revision 등록
+        run: |
+          python scripts/register_task_definitions.py --task ecs_task_definitions/wd_bronze_crawler_task_definition.json --image "$ETL_IMAGE" --region "$AWS_REGION"
+          python scripts/register_task_definitions.py --task ecs_task_definitions/wd_silver_etl_task_definition.json --image "$ETL_IMAGE" --region "$AWS_REGION"
+          python scripts/register_task_definitions.py --task ecs_task_definitions/wd_dashboard_export_task_definition.json --image "$ETL_IMAGE" --region "$AWS_REGION"
+          python scripts/register_task_definitions.py --task ecs_task_definitions/wd_dbt_gold_task_definition.json --image "$DBT_IMAGE" --region "$AWS_REGION"

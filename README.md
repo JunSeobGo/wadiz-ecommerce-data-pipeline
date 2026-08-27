@@ -132,6 +132,10 @@ python -m compileall airflow wd_bronze wd_silver wd_dashboard_export scripts
 - schema validation 강화
 - row count, null rate, duplicate rate 검증
 - CloudWatch 또는 Slack 알림
-- GitHub Actions OIDC 기반 AWS 배포
 - Streamlit 운영 배포 환경 분리
 - Terraform remote backend와 state locking 구성
+
+CI/CD는 아래를 이미 구성했습니다.
+
+- CI: ruff 린트, pytest 단위 테스트, Airflow DAG import 검증, dbt 모델 파싱, 민감정보 스캔 ([.github/workflows/ci-demo.yml](.github/workflows/ci-demo.yml))
+- CD: GitHub Actions OIDC 기반 ECR 빌드/푸시 + ECS task 정의 갱신 (수동 실행, [docs/deployment.md](docs/deployment.md))
