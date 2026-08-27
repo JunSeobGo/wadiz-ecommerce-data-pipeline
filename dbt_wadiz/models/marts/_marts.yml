@@ -9,6 +9,22 @@ models:
         data_tests:
           - not_null
           - unique
+      - name: dt
+        data_tests:
+          - not_null
+      - name: title
+        data_tests:
+          - not_null
+      - name: supporter_user_cnt
+        description: "COALESCE로 0 보정되므로 NULL 없음"
+        data_tests:
+          - not_null
+      - name: comment_cnt
+        data_tests:
+          - not_null
+      - name: reaction_cnt
+        data_tests:
+          - not_null
 
   - name: campaign_daily_kpi
     description: "캠페인 일자별 KPI 및 전일 대비 증감."
@@ -16,14 +32,26 @@ models:
       - name: campaign_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('campaign_kpi')
+              field: campaign_id
       - name: dt
         data_tests:
           - not_null
 
   - name: campaign_conversion_kpi
-    description: "관심→참여→구매 전환 KPI."
+    description: "관심→참여→구매 전환 KPI. campaign_kpi에서 파생."
     columns:
       - name: campaign_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('campaign_kpi')
+              field: campaign_id
+      - name: dt
+        data_tests:
+          - not_null
+      - name: funding_user_cnt
         data_tests:
           - not_null
 
@@ -33,7 +61,13 @@ models:
       - name: campaign_id
         data_tests:
           - not_null
+      - name: dt
+        data_tests:
+          - not_null
       - name: keyword_group
+        data_tests:
+          - not_null
+      - name: comment_cnt
         data_tests:
           - not_null
 
@@ -43,13 +77,22 @@ models:
       - name: campaign_id
         data_tests:
           - not_null
+      - name: dt
+        data_tests:
+          - not_null
+      - name: comment_cnt
+        data_tests:
+          - not_null
 
   - name: campaign_category_benchmark
-    description: "동일 카테고리 평균 대비 성과 비교."
+    description: "동일 카테고리 평균 대비 성과 비교. campaign_kpi에서 파생."
     columns:
       - name: campaign_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('campaign_kpi')
+              field: campaign_id
       - name: category_name
         data_tests:
           - not_null
