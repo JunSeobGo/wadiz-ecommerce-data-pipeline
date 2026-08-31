@@ -25,6 +25,13 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
+# dbt
+dbt_wadiz/target/
+dbt_wadiz/dbt_packages/
+dbt_wadiz/logs/
+dbt_wadiz/profiles.yml
+**/.user.yml
+
 # Virtual environments
 .venv/
 venv/
