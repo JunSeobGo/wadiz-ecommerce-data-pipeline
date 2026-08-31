@@ -80,6 +80,8 @@ jobs:
           cache-dependency-path: requirements-*.txt
       - name: dbt 설치
         run: pip install -r requirements-dbt.txt
+      - name: dbt 패키지 설치 (dbt_utils)
+        run: dbt deps --project-dir dbt_wadiz
       - name: profiles 준비 (값은 env_var 기본값 사용)
         run: cp dbt_wadiz/profiles.yml.example dbt_wadiz/profiles.yml
       - name: dbt parse (source/ref 의존성 및 모델 구조 검증)

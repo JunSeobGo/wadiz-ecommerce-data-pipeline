@@ -7,6 +7,12 @@ sources:
     database: awsdatacatalog
     schema: "{{ env_var('WADIZ_SILVER_DB', 'wadiz_silver2_db') }}"
     description: "Silver Parquet 테이블 (flatten/타입정리/PII/dedup 완료)"
+    # 데이터 신선도: Silver 적재 시각이 기준보다 오래되면 경고/에러.
+    # `dbt source freshness` 로 실행(빌드와 별개).
+    freshness:
+      warn_after: {count: 18, period: hour}
+      error_after: {count: 36, period: hour}
+    loaded_at_field: silver_processed_at
     tables:
       - name: preorder
       - name: comments

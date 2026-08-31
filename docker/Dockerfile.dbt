@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r /app/requirements-dbt.txt
 COPY dbt_wadiz /app/dbt_wadiz
 # profiles.yml.example은 값을 환경변수(env_var)로 읽으므로 그대로 복사해 사용한다.
 RUN cp /app/dbt_wadiz/profiles.yml.example /app/dbt_wadiz/profiles.yml
+# dbt_utils 등 패키지를 이미지에 미리 설치(런타임 네트워크 의존 제거).
+RUN dbt deps --project-dir /app/dbt_wadiz
 
 # ECS containerOverrides로 command를 주입한다. 기본은 dbt build.
 CMD ["dbt", "build", "--project-dir", "/app/dbt_wadiz", "--profiles-dir", "/app/dbt_wadiz"]

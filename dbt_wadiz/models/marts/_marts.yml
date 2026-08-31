@@ -3,6 +3,10 @@ version: 2
 models:
   - name: campaign_kpi
     description: "캠페인 단위 핵심 KPI 허브. 캠페인당 최신 스냅샷 1행."
+    data_tests:
+      # 파생값 정합성: reaction_cnt = signature + wish + comment
+      - dbt_utils.expression_is_true:
+          expression: "reaction_cnt = signature_cnt + wish_user_cnt + comment_cnt"
     columns:
       - name: campaign_id
         description: "캠페인 ID (캠페인당 유일)"
@@ -15,16 +19,39 @@ models:
       - name: title
         data_tests:
           - not_null
-      - name: supporter_user_cnt
-        description: "COALESCE로 0 보정되므로 NULL 없음"
+      - name: total_funding_amount
         data_tests:
           - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: achievement_rate
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: participation_cnt
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: signature_cnt
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: supporter_user_cnt
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: purchaser_cnt
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: wish_user_cnt
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
       - name: comment_cnt
         data_tests:
           - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
       - name: reaction_cnt
         data_tests:
           - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
 
   - name: campaign_daily_kpi
     description: "캠페인 일자별 KPI 및 전일 대비 증감."
@@ -32,12 +59,16 @@ models:
       - name: campaign_id
         data_tests:
           - not_null
-          - relationships:
-              to: ref('campaign_kpi')
-              field: campaign_id
+          - relationships: {to: ref('campaign_kpi'), field: campaign_id}
       - name: dt
         data_tests:
           - not_null
+      - name: total_funding_amount
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: participation_cnt
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
 
   - name: campaign_conversion_kpi
     description: "관심→참여→구매 전환 KPI. campaign_kpi에서 파생."
@@ -45,15 +76,17 @@ models:
       - name: campaign_id
         data_tests:
           - not_null
-          - relationships:
-              to: ref('campaign_kpi')
-              field: campaign_id
+          - relationships: {to: ref('campaign_kpi'), field: campaign_id}
       - name: dt
         data_tests:
           - not_null
       - name: funding_user_cnt
         data_tests:
           - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: purchaser_cnt
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
 
   - name: comment_nlp_kpi
     description: "댓글 키워드 그룹별 감성 KPI."
@@ -70,6 +103,13 @@ models:
       - name: comment_cnt
         data_tests:
           - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: positive_rate
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, max_value: 1, inclusive: true}
+      - name: negative_rate
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, max_value: 1, inclusive: true}
 
   - name: campaign_response_performance
     description: "메이커 응답 성과(질문 대비 답변율)."
@@ -83,6 +123,10 @@ models:
       - name: comment_cnt
         data_tests:
           - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+      - name: question_cnt
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
 
   - name: campaign_category_benchmark
     description: "동일 카테고리 평균 대비 성과 비교. campaign_kpi에서 파생."
@@ -90,9 +134,10 @@ models:
       - name: campaign_id
         data_tests:
           - not_null
-          - relationships:
-              to: ref('campaign_kpi')
-              field: campaign_id
+          - relationships: {to: ref('campaign_kpi'), field: campaign_id}
       - name: category_name
         data_tests:
           - not_null
+      - name: category_campaign_cnt
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 1, inclusive: true}
